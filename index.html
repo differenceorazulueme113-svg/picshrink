@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PicShrink - Free Global Bulk Image Compressor & Converter</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .drag-over { border-color: #3b82f6; background-color: #eff6ff; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between">
+
+    <header class="bg-white shadow-sm border-b border-slate-200 py-4 px-6">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-black text-blue-600 tracking-tight">Pic<span class="text-slate-700">Shrink</span></h1>
+            <span class="text-xs bg-green-100 text-green-800 font-semibold px-2.5 py-0.5 rounded-full">100% Secure & Local</span>
+        </div>
+    </header>
+
+    <main class="max-w-4xl w-full mx-auto p-4 md:p-8 flex-grow">
+        
+        <div class="w-full h-24 bg-slate-200 border border-dashed border-slate-300 rounded mb-8 flex items-center justify-center text-xs text-slate-400 font-mono">
+            [AD BANNER SPACE - ADSENSE / EZOIC]
+        </div>
+
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-extrabold text-slate-900 sm:text-4xl">Compress & Convert Images Instantly</h2>
+            <p class="mt-2 text-md text-slate-600">No uploads to servers. Fast, private, and unlimited processing right in your browser.</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Target Quality: <span id="qualityVal">80</span>%</label>
+                <input type="range" id="quality" min="10" max="100" value="80" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Convert To Format:</label>
+                <select id="format" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="image/jpeg">JPEG (Best for photos)</option>
+                    <option value="image/png">PNG (Preserve transparency)</option>
+                    <option value="image/webp">WebP (Next-Gen highly optimized)</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="dropZone" class="border-4 border-dashed border-slate-300 bg-white rounded-2xl p-8 md:p-12 text-center cursor-pointer hover:border-blue-500 transition-colors group">
+            <input type="file" id="fileInput" multiple accept="image/*" class="hidden">
+            <svg class="mx-auto h-12 w-12 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="mt-4 text-lg font-medium text-slate-700">Drag & drop your images here, or <span class="text-blue-600 underline">browse</span></p>
+            <p class="mt-1 text-xs text-slate-500">Supports PNG, JPG, JPEG, WEBP</p>
+        </div>
+
+        <div id="resultContainer" class="hidden mt-8 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="font-bold text-slate-700">Processing Queue</h3>
+                <button id="downloadAllBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors hidden">Download All (.Zip)</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-slate-500">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                        <tr>
+                            <th class="px-6 py-3">File Name</th>
+                            <th class="px-6 py-3">Original Size</th>
+                            <th class="px-6 py-3">Optimized Size</th>
+                            <th class="px-6 py-3">Savings</th>
+                            <th class="px-6 py-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queueRows">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="w-full h-24 bg-slate-200 border border-dashed border-slate-300 rounded mt-8 flex items-center justify-center text-xs text-slate-400 font-mono">
+            [AD BANNER SPACE - ADSENSE / EZOIC]
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-6 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-4xl mx-auto">
+            <p class="mb-2">&copy; 2026 PicShrink Utility Tools. Fast browser-based compression processing.</p>
+            <p>Our tool protects privacy by processing every transformation on your local CPU. Data never hits an external cloud network.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const qualityInput = document.getElementById('quality');
+        const qualityVal = document.getElementById('qualityVal');
+        const formatSelect = document.getElementById('format');
+        const resultContainer = document.getElementById('resultContainer');
+        const queueRows = document.getElementById('queueRows');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+        let compressedFiles = [];
+
+        qualityInput.addEventListener('input', (e) => {
+            qualityVal.textContent = e.target.value;
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => { handleFiles(e.dataTransfer.files); });
+        fileInput.addEventListener('change', (e) => { handleFiles(e.target.files); });
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            resultContainer.classList.remove('hidden');
+            
+            Array.from(files).forEach(file => {
+                if (!file.type.startsWith('image/')) return;
+                const rowId = 'row-' + Math.random().toString(36).substr(2, 9);
+                createQueueRow(file.name, file.size, rowId);
+
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function() { compressImage(img, file.name, rowId); }
+                };
+            });
+        }
+
+        function createQueueRow(name, originalSize, rowId) {
+            const html = `
+                <tr id="${rowId}" class="border-b border-slate-200 hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-medium text-slate-900 max-w-xs truncate">${name}</td>
+                    <td class="px-6 py-4">${formatBytes(originalSize)}</td>
+                    <td id="${rowId}-opt-size" class="px-6 py-4 text-slate-400">Processing...</td>
+                    <td id="${rowId}-savings" class="px-6 py-4 font-bold text-slate-400">--</td>
+                    <td id="${rowId}-action" class="px-6 py-4 text-right font-medium">
+                        <div class="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin ml-auto"></div>
+                    </td>
+                </tr>
+            `;
+            queueRows.insertAdjacentHTML('beforeend', html);
+        }
+
+        function compressImage(img, originalName, rowId) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            const chosenFormat = formatSelect.value;
+            const chosenQuality = qualityInput.value / 100;
+
+            canvas.toBlob((blob) => {
+                if (!blob) return;
+                let ext = 'jpg';
+                if (chosenFormat === 'image/png') ext = 'png';
+                if (chosenFormat === 'image/webp') ext = 'webp';
+                const baseName = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
+                const newFileName = `${baseName}-optimized.${ext}`;
+
+                const originalRow = document.getElementById(rowId);
+                const originalSize = parseInt(originalRow.cells[1].textContent.replace(/[^0-9.]/g, '')) * (originalRow.cells[1].textContent.includes('MB') ? 1024 * 1024 : 1024);
+                const optimizedSize = blob.size;
+                const savingsPercent = Math.max(0, Math.round(((originalSize - optimizedSize) / originalSize) * 100));
+
+                document.getElementById(`${rowId}-opt-size`).textContent = formatBytes(optimizedSize);
+                document.getElementById(`${rowId}-opt-size`).classList.remove('text-slate-400');
+                const savingsEl = document.getElementById(`${rowId}-savings`);
+                savingsEl.textContent = savingsPercent + '% Off';
+                savingsEl.className = `px-6 py-4 font-bold ${savingsPercent > 0 ? 'text-green-600' : 'text-amber-600'}`;
+
+                const blobUrl = URL.createObjectURL(blob);
+                const actionCell = document.getElementById(`${rowId}-action`);
+                actionCell.innerHTML = `<a href="${blobUrl}" download="${newFileName}" class="text-blue-600 hover:underline font-bold">Download</a>`;
+
+                compressedFiles.push({ blob, name: newFileName });
+                if(compressedFiles.length > 1) { downloadAllBtn.classList.remove('hidden'); }
+            }, chosenFormat, chosenQuality);
+        }
+
+        downloadAllBtn.addEventListener('click', () => {
+            const zip = new JSZip();
+            compressedFiles.forEach(file => { zip.file(file.name, file.blob); });
+            zip.generateAsync({ type: 'blob' }).then((content) => {
+                const zipUrl = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = zipUrl;
+                a.download = "picshrink-optimized-images.zip";
+                a.click();
+            });
+        });
+    </script>
+</body>
+</html>
